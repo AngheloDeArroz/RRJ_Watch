@@ -1,0 +1,68 @@
+# Flutter build files
+build/
+.dart_tool/
+.packages
+.flutter-plugins
+.flutter-plugins-dependencies
+generated_plugin_registrant.dart
+
+# IDE settings
+.idea/
+.vscode/
+*.iml
+
+# Android
+/android/.gradle
+/android/captures/
+android/gradlew
+android/gradlew.bat
+android/local.properties
+android/key.properties
+android/**/google-services.json
+android/**/firebase*.json
+**/*.keystore
+**/*.jks
+
+# iOS
+ios/Pods/
+ios/.symlinks/
+/ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/Runner.xcworkspace
+ios/GoogleService-Info.plist
+
+# macOS
+macos/Pods/
+macos/.symlinks/
+macos/Flutter/Flutter.framework
+macos/Flutter/Flutter.podspec
+
+# Web
+web/manifest.json
+web/firebase-messaging-sw.js
+
+# Firebase service account or sensitive JSON configs
+*.json
+
+# dotenv files (for API keys and secrets)
+.env
+.env.*
+
+# Output of flutter packages pub run
+pubspec.lock
+
+# Symbolication
+symbols/
+
+# Obfuscation
+app.*.symbols
+
+# Other build outputs
+*.log
+*.tmp
+*.lock
+
+# Misc
+*.DS_Store
+*.idea/
+*.swp
