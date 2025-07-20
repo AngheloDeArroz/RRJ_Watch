@@ -19,9 +19,9 @@ A Flutter-based mobile application for monitoring water quality and controlling 
 -  Smart Water Quality Status
   - Color-coded status: Good, Warning, or Critical
   - Based on thresholds defined for each parameter
-
+```
 ---
-
+```plaintext
 🧰 Tech Stack
 
 - Flutter (Dart)
