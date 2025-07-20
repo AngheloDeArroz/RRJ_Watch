@@ -104,3 +104,4 @@ RRJ_Watch/
 De Arroz, Anghelo 
 Alano, Renze 
 Berana, Dyalah
+Magbuhat, Kim Jomel
