@@ -25,7 +25,7 @@ A Flutter-based mobile application for monitoring water quality and controlling 
 🧰 Tech Stack
 
 - Flutter (Dart)
-- Firebase Firestore** (Cloud NoSQL database)
+- Firebase Firestore (Cloud NoSQL database)
 - Firebase Core
 - Provider (State management)
 - Google Fonts, Flutter Vector Icons
