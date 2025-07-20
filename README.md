@@ -100,7 +100,7 @@ RRJ_Watch/
 ```
 ---
 
-👥 Authors
+👥 Developers
 De Arroz, Anghelo 
 Alano, Renze 
 Berana, Dyalah
