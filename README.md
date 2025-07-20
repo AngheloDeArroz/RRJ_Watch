@@ -1,6 +1,6 @@
-🐟 RRJ Aquatique: Aquarium Monitoring and Feeding App
+🐟 RRJ Watch: Smart Aquarium Monitoring & Automation App
 
-A Flutter-based mobile application for monitoring water quality and controlling feeding in fish aquariums. Built for **RRJ Watch** as part of our capstone project.
+A smart Flutter-based mobile application for real-time monitoring and automation of fish aquariums. Built for **RRJ Watch** as part of our capstone project, the app allows remote monitoring of water quality, automated feeding control, and pH balancing—all integrated with Firebase for real-time data updates and scheduling.
 
 ---
 📱 Features
@@ -10,7 +10,10 @@ A Flutter-based mobile application for monitoring water quality and controlling 
   - Automatically updates without refreshing the app
 
 - Feeding Control System
-  - Adjustable feeding schedules 
+  - Adjustable feeding schedules
+
+- pH Balancing Control
+  - Dispenses solution to maintain optimal pH levels when thresholds are exceeded
 
 -  Analytics 
   - Shows water quality status every hour
