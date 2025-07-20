@@ -15,9 +15,9 @@ A smart Flutter-based mobile application for real-time monitoring and automation
 - pH Balancing Control
   - Dispenses solution to maintain optimal pH levels when thresholds are exceeded
 
--  Analytics 
-  - Shows water quality status every hour
-  - Tooltips for user-friendly guidance
+-  Hourly Analytics Visualization 
+  - Displays a live graph of water quality trends per hour
+  - Helps users track fluctuations over time
 
 -  Smart Water Quality Status
   - Color-coded status: Good, Warning, or Critical
