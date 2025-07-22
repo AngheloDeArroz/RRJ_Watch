@@ -61,10 +61,10 @@ Setup Instructions
 ---
 📱 App Screenshots
 
-| ![](assets/screenshots/1.png) | ![](assets/screenshots/2.png) | ![](assets/screenshots/3.png) |
+| ![](assets/screenshots/1.jpg) | ![](assets/screenshots/2.jpg) | ![](assets/screenshots/3.jpg) |
 |-------------------------------|-------------------------------|-------------------------------|
-| ![](assets/screenshots/4.png) | ![](assets/screenshots/5.png) | ![](assets/screenshots/6.png) |
-| ![](assets/screenshots/7.png) | ![](assets/screenshots/8.png) | ![](assets/screenshots/9.png) |
+| ![](assets/screenshots/4.jpg) | ![](assets/screenshots/5.jpg) | ![](assets/screenshots/6.jpg) |
+| ![](assets/screenshots/7.jpg) | ![](assets/screenshots/8.jpg) | ![](assets/screenshots/9.jpg) |
 
 ---
 
