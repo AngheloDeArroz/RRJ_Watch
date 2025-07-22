@@ -61,10 +61,10 @@ Setup Instructions
 ---
 📱 App Screenshots
 
-| ![](assets/screenshots/1.jpg) | ![](assets/screenshots/2.jpg) | ![](assets/screenshots/3.jpg) |
-|-------------------------------|-------------------------------|-------------------------------|
-| ![](assets/screenshots/4.jpg) | ![](assets/screenshots/5.jpg) | ![](assets/screenshots/6.jpg) |
-| ![](assets/screenshots/7.jpg) | ![](assets/screenshots/8.jpg) | ![](assets/screenshots/9.jpg) |
+| ![](rrj_aquatique/assets/screenshots/1.jpg) | ![](rrj_aquatique/assets/screenshots/2.jpg) | ![](rrj_aquatique/assets/screenshots/3.jpg) |
+|---------------------------------------------|---------------------------------------------|---------------------------------------------|
+| ![](rrj_aquatique/assets/screenshots/4.jpg) | ![](rrj_aquatique/assets/screenshots/5.jpg) | ![](rrj_aquatique/assets/screenshots/6.jpg) |
+| ![](rrj_aquatique/assets/screenshots/7.jpg) | ![](rrj_aquatique/assets/screenshots/8.jpg) | ![](rrj_aquatique/assets/screenshots/9.jpg) |
 
 ---
 
