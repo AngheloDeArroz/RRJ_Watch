@@ -59,45 +59,13 @@ Setup Instructions
 4. Run the App
 ```
 ---
+📱 App Screenshots
 
-📁 Folder Structure
-```plaintext
-RRJ_Watch/
-│
-├── android/                    
-├── assets/                     
-│   ├── fonts/
-│   └── icons/
-├── ios/                        
-├── lib/
-│   ├── main.dart               
-│   ├── src/
-│   │   ├── config/
-│   │   │   └── (theme.dart)
-│   │   ├── models/
-│   │   │   ├── (container_levels.dart)
-│   │   │   ├── (history_log.dart)
-│   │   │   └── (water_data_point.dart)
-│   │   ├── services/
-│   │   │   └── firestore_service.dart
-│   │   ├── ui/
-│   │   │   ├── components/
-│   │   │   ├── screens/
-│   │   │   │   ├── dashboard_screen.dart
-│   │   │   │   ├── main_navigation.dart
-│   │   │   │   ├── splash_screen.dart
-│   │   │   │   ├── system_status_screen.dart
-│   │   │   │   └── trends_screen.dart
-│   │   │   └── widgets/
-│   │   │       ├── ai_insight_dialog.dart
-│   │   │       ├── automation_control_card.dart
-│   │   │       ├── container_levels.dart
-│   │   │       ├── history_insights_dialog.dart
-│   │   │       ├── hourly_water_quality_chart.dart
-│   │   │       ├── water_quality_status_card.dart
-├── pubspec.yaml                # Flutter dependencies & project metadata
-└── README.md                   # Project documentation
-```
+| ![](assets/screenshots/1.png) | ![](assets/screenshots/2.png) | ![](assets/screenshots/3.png) |
+|-------------------------------|-------------------------------|-------------------------------|
+| ![](assets/screenshots/4.png) | ![](assets/screenshots/5.png) | ![](assets/screenshots/6.png) |
+| ![](assets/screenshots/7.png) | ![](assets/screenshots/8.png) | ![](assets/screenshots/9.png) |
+
 ---
 
 👥 Developers
