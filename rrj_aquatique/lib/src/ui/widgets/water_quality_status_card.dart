@@ -40,13 +40,23 @@ class VisualAquariumCard extends StatelessWidget {
         final double? temp = (data['temperature'] as num?)?.toDouble();
         final double? ph = (data['ph'] as num?)?.toDouble();
         final double? turbidity = (data['turbidity'] as num?)?.toDouble();
+        final Timestamp? lastUpdated = data['lastUpdated'] as Timestamp?;
+
+        // System online/offline logic
+        bool isOnline = false;
+        if (lastUpdated != null) {
+          final lastTime = lastUpdated.toDate();
+          final now = DateTime.now();
+          final difference = now.difference(lastTime);
+          isOnline = difference.inMinutes < 2;
+        }
 
         final isTempOk = temp != null && temp >= 22 && temp <= 28;
         final isPhOk = ph != null && ph >= 6.5 && ph <= 7.8;
         final isTurbidityOk = turbidity != null && turbidity < 10;
         final isHealthy = isTempOk && isPhOk && isTurbidityOk;
 
-        // Detailed status text with reasons
+        // Detailed status text
         String statusText;
         if (isHealthy) {
           statusText = 'All systems stable. Water quality is optimal.';
@@ -111,6 +121,8 @@ class VisualAquariumCard extends StatelessWidget {
                   height: 220,
                   width: double.infinity,
                   fit: BoxFit.cover,
+                  color: isOnline ? null : Colors.black.withOpacity(0.4),
+                  colorBlendMode: isOnline ? null : BlendMode.darken,
                 ),
 
                 // Gradient overlay
@@ -128,7 +140,44 @@ class VisualAquariumCard extends StatelessWidget {
                   ),
                 ),
 
-                // Status and info
+                // TOP LEFT: System Online / Offline
+                Positioned(
+                  top: 12,
+                  left: 12,
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.6),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          isOnline ? Icons.wifi : Icons.wifi_off,
+                          color: isOnline
+                              ? Colors.greenAccent
+                              : Colors.redAccent,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          isOnline ? 'System Online' : 'System Offline',
+                          style: TextStyle(
+                            color: isOnline
+                                ? Colors.greenAccent
+                                : Colors.redAccent,
+                            fontFamily: 'Lexend',
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // BOTTOM LEFT: Aquarium Status and info
                 Positioned(
                   left: 16,
                   bottom: 16,
@@ -204,7 +253,7 @@ class VisualAquariumCard extends StatelessWidget {
                   ),
                 ),
 
-                // Metric panel
+                // TOP RIGHT: Metrics
                 Positioned(
                   top: 12,
                   right: 12,

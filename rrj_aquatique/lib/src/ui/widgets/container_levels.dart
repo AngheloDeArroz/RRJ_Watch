@@ -12,12 +12,12 @@ class ContainerLevelsCard extends StatelessWidget {
           .collection('container-levels')
           .doc('status')
           .snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
+      builder: (context, containerSnapshot) {
+        if (containerSnapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        if (!snapshot.hasData || !snapshot.data!.exists) {
+        if (!containerSnapshot.hasData || !containerSnapshot.data!.exists) {
           return const Center(
             child: Text(
               'No container data found.',
@@ -26,22 +26,80 @@ class ContainerLevelsCard extends StatelessWidget {
           );
         }
 
-        final data = snapshot.data!.data();
-        final foodLevel = data?['foodLevel'] ?? 0;
-        final phSolutionLevel = data?['phSolutionLevel'] ?? 0; // pH (+)
-        final phSolutionLevelLower = data?['phSolutionLevelLower'] ?? 0; // pH (–)
+        final containerData = containerSnapshot.data!.data();
+        final foodLevel = (containerData?['foodLevel'] ?? 0).toDouble();
+        final phSolutionLevel = (containerData?['phSolutionLevel'] ?? 0)
+            .toDouble();
 
-        return ContainerSection(
-          title: 'Resource Monitor',
-          children: [
-            const SizedBox(height: 6),
-            _ContainerPager(
-              foodLevel: foodLevel,
-              phSolutionLevel: phSolutionLevel,
-              phSolutionLevelLower: phSolutionLevelLower,
-            ),
-            const SizedBox(height: 6),
-          ],
+        return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+          stream: FirebaseFirestore.instance
+              .collection('water-history')
+              .orderBy('timestamp', descending: false)
+              .limitToLast(7)
+              .snapshots(),
+          builder: (context, historySnapshot) {
+            double estimatedDaysRemainingFood = 0;
+            double estimatedDaysRemainingPH = 0;
+
+            if (historySnapshot.hasData &&
+                historySnapshot.data!.docs.isNotEmpty) {
+              final historyDocs = historySnapshot.data!.docs;
+
+              // Food consumption per day
+              final foodConsumptions = historyDocs
+                  .map(
+                    (doc) =>
+                        ((doc.data()['foodLevelStartOfDay'] ?? 0).toDouble() -
+                        (doc.data()['foodLevelEndOfDay'] ?? 0).toDouble()),
+                  )
+                  .where((c) => c > 0)
+                  .toList();
+
+              if (foodConsumptions.isNotEmpty) {
+                final avgFoodConsumption =
+                    foodConsumptions.reduce((a, b) => a + b) /
+                    foodConsumptions.length;
+                if (avgFoodConsumption > 0) {
+                  estimatedDaysRemainingFood = foodLevel / avgFoodConsumption;
+                }
+              }
+
+              // pH solution consumption per day
+              final phConsumptions = historyDocs
+                  .map(
+                    (doc) =>
+                        ((doc.data()['phSolutionLevelStartOfDay'] ?? 0)
+                            .toDouble() -
+                        (doc.data()['phSolutionLevelEndOfDay'] ?? 0)
+                            .toDouble()),
+                  )
+                  .where((c) => c > 0)
+                  .toList();
+
+              if (phConsumptions.isNotEmpty) {
+                final avgPhConsumption =
+                    phConsumptions.reduce((a, b) => a + b) /
+                    phConsumptions.length;
+                if (avgPhConsumption > 0) {
+                  estimatedDaysRemainingPH = phSolutionLevel / avgPhConsumption;
+                }
+              }
+            }
+
+            return ContainerSection(
+              title: 'Resource Monitor',
+              children: [
+                const SizedBox(height: 6),
+                _ContainerPager(
+                  foodLevel: foodLevel.toInt(),
+                  phSolutionLevel: phSolutionLevel.toInt(),
+                  estimatedDaysFood: estimatedDaysRemainingFood,
+                  estimatedDaysPH: estimatedDaysRemainingPH,
+                ),
+                const SizedBox(height: 6),
+              ],
+            );
+          },
         );
       },
     );
@@ -66,10 +124,7 @@ class ContainerSection extends StatelessWidget {
         width: double.infinity,
         decoration: BoxDecoration(
           color: Colors.white,
-          border: Border.all(
-            color: Colors.blueGrey.shade200,
-            width: 1.5,
-          ),
+          border: Border.all(color: Colors.blueGrey.shade200, width: 1.5),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         child: Column(
@@ -95,13 +150,15 @@ class ContainerSection extends StatelessWidget {
 
 class _ContainerPager extends StatefulWidget {
   final int foodLevel;
-  final int phSolutionLevel;        // pH (+)
-  final int phSolutionLevelLower;   // pH (–)
+  final int phSolutionLevel;
+  final double estimatedDaysFood;
+  final double estimatedDaysPH;
 
   const _ContainerPager({
     required this.foodLevel,
     required this.phSolutionLevel,
-    required this.phSolutionLevelLower,
+    required this.estimatedDaysFood,
+    required this.estimatedDaysPH,
   });
 
   @override
@@ -122,28 +179,19 @@ class _ContainerPagerState extends State<_ContainerPager> {
         label: 'Food Level',
         description:
             'Pellets for feeding your aquatic pets. Keep it stocked to maintain feeding schedules.',
+        estimatedDays: widget.estimatedDaysFood,
       ),
       _ContainerCard(
-        title: 'pH Solution (+)',
+        title: 'pH Solution',
         level: widget.phSolutionLevel,
         visual: _PHBottle(
           level: widget.phSolutionLevel,
-          liquidColor: Colors.blueAccent, // distinct color for pH up
+          liquidColor: Colors.blueAccent,
         ),
-        label: 'pH Solution Level (+)',
+        label: 'pH Solution Level',
         description:
-            'Automatically raises the water’s pH. Important for aquatic health and stability.',
-      ),
-      _ContainerCard(
-        title: 'pH Solution (–)',
-        level: widget.phSolutionLevelLower,
-        visual: _PHBottle(
-          level: widget.phSolutionLevelLower,
-          liquidColor: Colors.purpleAccent, // distinct color for pH down
-        ),
-        label: 'pH Solution Level (–)',
-        description:
-            'Automatically lowers the water’s pH. Important for aquatic health and stability.',
+            'Neutralizes and maintains the aquarium’s pH level for a stable aquatic environment.',
+        estimatedDays: widget.estimatedDaysPH,
       ),
     ];
 
@@ -190,10 +238,11 @@ class _ContainerPagerState extends State<_ContainerPager> {
 
 class _ContainerCard extends StatelessWidget {
   final String title;
-  final int level; // 0-100
+  final int level;
   final Widget visual;
   final String label;
   final String description;
+  final double estimatedDays;
 
   const _ContainerCard({
     required this.title,
@@ -201,6 +250,7 @@ class _ContainerCard extends StatelessWidget {
     required this.visual,
     required this.label,
     required this.description,
+    required this.estimatedDays,
   });
 
   @override
@@ -248,26 +298,31 @@ class _ContainerCard extends StatelessWidget {
                 Chip(
                   label: Text(
                     '$level% Full',
-                    style: TextStyle(
-                      color: color,
-                      fontFamily: 'Lexend',
-                    ),
+                    style: TextStyle(color: color, fontFamily: 'Lexend'),
                   ),
                   backgroundColor: color.withOpacity(0.2),
                 ),
-                if (level < 20)
-                  const Padding(
-                    padding: EdgeInsets.only(top: 4),
-                    child: Text(
-                      'Refill soon',
-                      style: TextStyle(
-                        color: Colors.red,
-                        fontSize: 12,
-                        fontFamily: 'Lexend',
-                      ),
-                      textAlign: TextAlign.center,
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    level == 0
+                        ? 'Please refill'
+                        : '${estimatedDays.ceil()} days remaining',
+                    style: TextStyle(
+                      color: level == 0
+                          ? Colors.red
+                          : (estimatedDays <= 1
+                                ? Colors.red
+                                : (estimatedDays <= 3
+                                      ? Colors.orange
+                                      : Colors.green)),
+                      fontSize: 12,
+                      fontFamily: 'Lexend',
                     ),
+                    textAlign: TextAlign.center,
                   ),
+                ),
+
                 const SizedBox(height: 6),
                 Text(
                   description,
@@ -288,8 +343,9 @@ class _ContainerCard extends StatelessWidget {
   }
 }
 
+// Keep your wave and bottle animation widgets below unchanged
 class _FoodImageContainer extends StatefulWidget {
-  final int level; // 0-100
+  final int level;
   const _FoodImageContainer({required this.level});
 
   @override
@@ -328,7 +384,6 @@ class _FoodImageContainerState extends State<_FoodImageContainer>
       child: Stack(
         alignment: Alignment.bottomCenter,
         children: [
-          // Container shape
           Container(
             width: containerWidth,
             height: containerHeight,
@@ -338,10 +393,7 @@ class _FoodImageContainerState extends State<_FoodImageContainer>
                 end: Alignment.bottomCenter,
                 colors: [Colors.orange.shade100, Colors.orange.shade200],
               ),
-              border: Border.all(
-                color: Colors.deepOrange.shade200,
-                width: 2,
-              ),
+              border: Border.all(color: Colors.deepOrange.shade200, width: 2),
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
@@ -352,8 +404,6 @@ class _FoodImageContainerState extends State<_FoodImageContainer>
               ],
             ),
           ),
-
-          // Wave painter
           AnimatedBuilder(
             animation: _controller,
             builder: (context, child) {
@@ -370,8 +420,6 @@ class _FoodImageContainerState extends State<_FoodImageContainer>
               );
             },
           ),
-
-          // Cap
           Positioned(
             top: 0,
             child: Container(
@@ -397,13 +445,10 @@ class _FoodImageContainerState extends State<_FoodImageContainer>
 }
 
 class _PHBottle extends StatefulWidget {
-  final int level;          // 0-100
-  final Color liquidColor;  // distinguishes (+) vs (–)
+  final int level;
+  final Color liquidColor;
 
-  const _PHBottle({
-    required this.level,
-    required this.liquidColor,
-  });
+  const _PHBottle({required this.level, required this.liquidColor});
 
   @override
   State<_PHBottle> createState() => _PHBottleState();
@@ -441,7 +486,6 @@ class _PHBottleState extends State<_PHBottle>
       child: Stack(
         alignment: Alignment.bottomCenter,
         children: [
-          // Bottle shape
           Container(
             width: bottleWidth,
             height: bottleHeight,
@@ -467,8 +511,6 @@ class _PHBottleState extends State<_PHBottle>
               ],
             ),
           ),
-
-          // Liquid (wave)
           AnimatedBuilder(
             animation: _controller,
             builder: (context, child) {
@@ -477,7 +519,7 @@ class _PHBottleState extends State<_PHBottle>
                 child: CustomPaint(
                   size: Size(bottleWidth, bottleHeight),
                   painter: WavePainter(
-                    color: widget.liquidColor, // fixed by type (+/–), no label
+                    color: widget.liquidColor,
                     animationValue: _controller.value,
                     levelPercent: widget.level,
                   ),
@@ -485,8 +527,6 @@ class _PHBottleState extends State<_PHBottle>
               );
             },
           ),
-
-          // Cap
           Positioned(
             top: 0,
             child: Container(
@@ -505,7 +545,6 @@ class _PHBottleState extends State<_PHBottle>
               ),
             ),
           ),
-          // NOTE: No mid-bottle text label anymore.
         ],
       ),
     );
@@ -515,7 +554,7 @@ class _PHBottleState extends State<_PHBottle>
 class WavePainter extends CustomPainter {
   final Color color;
   final double animationValue;
-  final int levelPercent; // 0-100
+  final int levelPercent;
 
   WavePainter({
     required this.color,

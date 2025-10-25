@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dashboard_screen.dart';
 import 'trends_screen.dart';
-import 'system_status_screen.dart';
+import 'history_screen.dart';
 
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
@@ -16,7 +16,7 @@ class _MainNavigationState extends State<MainNavigation> {
   final List<Widget> _pages = const [
     DashboardScreen(),
     TrendsScreen(),
-    SystemStatusScreen(),
+    HistoryScreen(),
   ];
 
   void _onItemTapped(int index) {
@@ -33,10 +33,10 @@ class _MainNavigationState extends State<MainNavigation> {
         title = 'RRJ Watch';
         break;
       case 1:
-        title = 'RRJ Watch';
+        title = 'RRJ Trends';
         break;
       case 2:
-        title = 'RRJ Watch';
+        title = 'RRJ History';
         break;
       default:
         title = 'RRJ Watch';
@@ -65,7 +65,7 @@ class _MainNavigationState extends State<MainNavigation> {
           ],
         ),
         iconTheme: const IconThemeData(color: Colors.white),
-        backgroundColor: Color(0xFF006D77),
+        backgroundColor: const Color(0xFF006D77),
         elevation: 4,
       ),
       body: Stack(
@@ -83,16 +83,16 @@ class _MainNavigationState extends State<MainNavigation> {
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: Color(0xFF006D77),
+        backgroundColor: const Color(0xFF006D77),
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
-        selectedItemColor: Color(0xFF83C5BE),
-        unselectedItemColor: Color(0xFFBEE3DB),
-        selectedLabelStyle: TextStyle(
+        selectedItemColor: const Color(0xFF83C5BE),
+        unselectedItemColor: const Color(0xFFBEE3DB),
+        selectedLabelStyle: const TextStyle(
           fontFamily: 'Lexend',
           fontWeight: FontWeight.w600,
         ),
-        unselectedLabelStyle: TextStyle(
+        unselectedLabelStyle: const TextStyle(
           fontFamily: 'Lexend',
           fontWeight: FontWeight.w400,
         ),
@@ -106,8 +106,8 @@ class _MainNavigationState extends State<MainNavigation> {
             label: 'Trends',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.developer_board),
-            label: 'System Status',
+            icon: Icon(Icons.history),
+            label: 'History',
           ),
         ],
       ),
