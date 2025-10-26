@@ -1,6 +1,6 @@
 plugins {
     id("com.android.application")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
     id("com.google.gms.google-services")
     id("dev.flutter.flutter-gradle-plugin")
 }
@@ -11,8 +11,10 @@ android {
     ndkVersion = "27.0.12077973"
 
     compileOptions {
+        // Enable Java 11 and core library desugaring
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+        isCoreLibraryDesugaringEnabled = true
     }
 
     kotlinOptions {
@@ -28,7 +30,7 @@ android {
     }
 
     buildTypes {
-        release {
+        getByName("release") {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
@@ -47,4 +49,7 @@ flutter {
 
 dependencies {
     implementation("androidx.preference:preference-ktx:1.2.1")
+
+    // Required for core library desugaring
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 }

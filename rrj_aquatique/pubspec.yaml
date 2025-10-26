@@ -19,6 +19,8 @@ dependencies:
   # Firebase
   firebase_core: ^2.30.0
   cloud_firestore: ^4.17.3
+  firebase_messaging: ^14.9.4
+  flutter_local_notifications: ^17.2.3  #  Added for local notification support
 
   # State management
   provider: ^6.1.2
@@ -27,7 +29,7 @@ dependencies:
   fl_chart: ^0.63.0
 
   # HTTP
-  http: 1.4.0
+  http: ^1.4.0
 
   # Date & Time formatting
   intl: ^0.18.1
