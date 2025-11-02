@@ -39,7 +39,7 @@ dependencies:
 
   # PDF generation and printing
   pdf: ^3.11.3
-  printing: ^5.10.4
+  printing: ^5.13.1
 
 dev_dependencies:
   flutter_test:
