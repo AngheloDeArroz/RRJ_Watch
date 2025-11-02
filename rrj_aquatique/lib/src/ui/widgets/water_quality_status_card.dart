@@ -52,8 +52,8 @@ class VisualAquariumCard extends StatelessWidget {
         }
 
         final isTempOk = temp != null && temp >= 22 && temp <= 28;
-        final isPhOk = ph != null && ph >= 6.5 && ph <= 7.8;
-        final isTurbidityOk = turbidity != null && turbidity < 10;
+        final isPhOk = ph != null && ph >= 6.4 && ph <= 7.6;
+        final isTurbidityOk = turbidity != null && turbidity < 40;
         final isHealthy = isTempOk && isPhOk && isTurbidityOk;
 
         // Detailed status text
@@ -73,15 +73,15 @@ class VisualAquariumCard extends StatelessWidget {
 
           if (ph == null) {
             issues.add('pH data unavailable');
-          } else if (ph < 6.5) {
+          } else if (ph < 6.4) {
             issues.add('pH is too low');
-          } else if (ph > 7.8) {
+          } else if (ph > 7.6) {
             issues.add('pH is too high');
           }
 
           if (turbidity == null) {
             issues.add('Turbidity data unavailable');
-          } else if (turbidity >= 10) {
+          } else if (turbidity >= 40) {
             issues.add('Turbidity is too high');
           }
 
@@ -225,7 +225,7 @@ class VisualAquariumCard extends StatelessWidget {
                           const SizedBox(width: 6),
                           HoldableTooltip(
                             message:
-                                'Safe Parameters:\nTemperature: 22°C - 28°C\npH: 6.5 - 7.8\nTurbidity: < 10 NTU',
+                                'Safe Parameters:\nTemperature: 22°C - 28°C\npH: 6.5 - 7.5\nTurbidity: < 40 NTU',
                             child: const Icon(
                               Icons.info_outline,
                               size: 18,

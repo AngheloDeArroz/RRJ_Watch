@@ -17,7 +17,12 @@ class _AutomationControlCardState extends State<AutomationControlCard>
   late final Connectivity _connectivity;
   late final Stream<List<ConnectivityResult>> _connectivityStream;
 
-  final docRef = FirebaseFirestore.instance.collection('settings').doc('status');
+  final docRef = FirebaseFirestore.instance
+      .collection('settings')
+      .doc('status');
+  final containerRef = FirebaseFirestore.instance
+      .collection('container-levels')
+      .doc('status');
 
   @override
   void initState() {
@@ -26,7 +31,8 @@ class _AutomationControlCardState extends State<AutomationControlCard>
     _connectivityStream = _connectivity.onConnectivityChanged;
 
     _connectivityStream.listen((results) {
-      final hasConnection = results.isNotEmpty &&
+      final hasConnection =
+          results.isNotEmpty &&
           results.any((r) => r != ConnectivityResult.none);
       setState(() {
         isOffline = !hasConnection;
@@ -47,7 +53,7 @@ class _AutomationControlCardState extends State<AutomationControlCard>
 
   DateTime _timeOfDayToDateTime(TimeOfDay time) {
     final now = DateTime.now();
-    return DateTime(now.year, now.month, now.day, time.hour, time.minute);
+    return DateTime(now.year, now.month, now.day, time.hour, time.minute, 0, 0);
   }
 
   Future<void> _saveSettings(Map<String, dynamic> updates) async {
@@ -63,15 +69,47 @@ class _AutomationControlCardState extends State<AutomationControlCard>
     });
   }
 
+  Future<Map<String, dynamic>> _getContainerLevels() async {
+    final containerDoc = await containerRef.get();
+    return containerDoc.data() ?? {};
+  }
+
   Future<void> _showFeedingDialog(int index) async {
+    final currentData = (await docRef.get()).data() ?? {};
+    final containerLevels = await _getContainerLevels();
+
+    final feedingTime1 = currentData['feedingTime1'] != null
+        ? TimeOfDay.fromDateTime(
+            (currentData['feedingTime1'] as Timestamp).toDate(),
+          )
+        : null;
+    final feedingTime2 = currentData['feedingTime2'] != null
+        ? TimeOfDay.fromDateTime(
+            (currentData['feedingTime2'] as Timestamp).toDate(),
+          )
+        : null;
+
+    final feedingGrams1 = currentData['feedingGrams1'] ?? 0;
+    final feedingGrams2 = currentData['feedingGrams2'] ?? 0;
+
+    final foodLevel = containerLevels['foodLevel'] ?? 0;
+    final availableGrams = foodLevel * 4; // 100% = 400g
+
     TimeOfDay selectedTime = TimeOfDay.now();
     int selectedGrams = 5;
+
+    bool isSameTime(TimeOfDay? a, TimeOfDay? b) {
+      if (a == null || b == null) return false;
+      return a.hour == b.hour && a.minute == b.minute;
+    }
 
     await showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: const Text(
             "Set Feeding Time and Amount",
             style: TextStyle(fontFamily: 'Lexend'),
@@ -93,6 +131,40 @@ class _AutomationControlCardState extends State<AutomationControlCard>
                         initialTime: selectedTime,
                       );
                       if (picked != null) {
+                        // ✅ Time validation
+                        if ((index == 1 &&
+                                feedingTime2 != null &&
+                                isSameTime(picked, feedingTime2)) ||
+                            (index == 2 &&
+                                feedingTime1 != null &&
+                                isSameTime(picked, feedingTime1))) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Feeding times cannot be the same.',
+                                style: TextStyle(fontFamily: 'Lexend'),
+                              ),
+                              backgroundColor: Colors.redAccent,
+                            ),
+                          );
+                          return;
+                        }
+
+                        final now = TimeOfDay.now();
+                        if (picked.hour == now.hour &&
+                            picked.minute == now.minute) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Feeding time cannot be the same as the current time.',
+                                style: TextStyle(fontFamily: 'Lexend'),
+                              ),
+                              backgroundColor: Colors.redAccent,
+                            ),
+                          );
+                          return;
+                        }
+
                         setStateDialog(() => selectedTime = picked);
                       }
                     },
@@ -105,12 +177,13 @@ class _AutomationControlCardState extends State<AutomationControlCard>
                   Slider(
                     value: selectedGrams.toDouble(),
                     min: 5,
-                    max: 100,
-                    divisions: 19, // 5g increments
+                    max: 400,
+                    divisions: 79,
                     label: "$selectedGrams g",
                     onChanged: (value) {
-                      setStateDialog(() =>
-                          selectedGrams = (value / 5).round() * 5);
+                      setStateDialog(
+                        () => selectedGrams = (value / 5).round() * 5,
+                      );
                     },
                   ),
                 ],
@@ -120,18 +193,76 @@ class _AutomationControlCardState extends State<AutomationControlCard>
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text("Cancel", style: TextStyle(fontFamily: 'Lexend')),
+              child: const Text(
+                "Cancel",
+                style: TextStyle(fontFamily: 'Lexend'),
+              ),
             ),
             ElevatedButton(
               onPressed: () async {
+                // Double check before saving
+                if ((index == 1 &&
+                        feedingTime2 != null &&
+                        isSameTime(selectedTime, feedingTime2)) ||
+                    (index == 2 &&
+                        feedingTime1 != null &&
+                        isSameTime(selectedTime, feedingTime1))) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Feeding times cannot be the same.',
+                        style: TextStyle(fontFamily: 'Lexend'),
+                      ),
+                      backgroundColor: Colors.redAccent,
+                    ),
+                  );
+                  return;
+                }
+
+                final now = TimeOfDay.now();
+                if (selectedTime.hour == now.hour &&
+                    selectedTime.minute == now.minute) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Feeding time cannot be the same as the current time.',
+                        style: TextStyle(fontFamily: 'Lexend'),
+                      ),
+                      backgroundColor: Colors.redAccent,
+                    ),
+                  );
+                  return;
+                }
+
+                final totalGrams =
+                    (index == 1
+                            ? selectedGrams + feedingGrams2
+                            : selectedGrams + feedingGrams1)
+                        .toDouble();
+
+                if (totalGrams > availableGrams) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Not enough food. Available: ${availableGrams}g',
+                        style: const TextStyle(fontFamily: 'Lexend'),
+                      ),
+                      backgroundColor: Colors.redAccent,
+                    ),
+                  );
+                  return;
+                }
+
                 await _saveSettings({
                   'feedingEnabled': true,
                   if (index == 1)
-                    'feedingTime1':
-                        Timestamp.fromDate(_timeOfDayToDateTime(selectedTime)),
+                    'feedingTime1': Timestamp.fromDate(
+                      _timeOfDayToDateTime(selectedTime),
+                    ),
                   if (index == 2)
-                    'feedingTime2':
-                        Timestamp.fromDate(_timeOfDayToDateTime(selectedTime)),
+                    'feedingTime2': Timestamp.fromDate(
+                      _timeOfDayToDateTime(selectedTime),
+                    ),
                   if (index == 1) 'feedingGrams1': selectedGrams,
                   if (index == 2) 'feedingGrams2': selectedGrams,
                 });
@@ -155,7 +286,11 @@ class _AutomationControlCardState extends State<AutomationControlCard>
   }
 
   Widget _buildFeedingTimeTile(
-      String label, TimeOfDay? time, int? grams, int index) {
+    String label,
+    TimeOfDay? time,
+    int? grams,
+    int index,
+  ) {
     return ListTile(
       title: Text(label, style: const TextStyle(fontFamily: 'Lexend')),
       subtitle: Text(
@@ -232,7 +367,7 @@ class _AutomationControlCardState extends State<AutomationControlCard>
 
   Widget _buildTabContent(Map<String, dynamic> data) {
     final bool isFeedingEnabled = data['feedingEnabled'] ?? false;
-    final bool isPhBalancerEnabled = data['phBalancerEnabled'] ?? false;
+    bool isPhBalancerEnabled = data['phBalancerEnabled'] ?? false;
 
     final feedingTime1 = data['feedingTime1'] != null
         ? TimeOfDay.fromDateTime((data['feedingTime1'] as Timestamp).toDate())
@@ -245,70 +380,188 @@ class _AutomationControlCardState extends State<AutomationControlCard>
     final feedingGrams2 = data['feedingGrams2'];
 
     if (selectedTabIndex == 0) {
+      //  Feeding Tab
       return Column(
         key: const ValueKey('feeding'),
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SwitchListTile(
-            title: const Text("Enable Feeding",
-                style: TextStyle(fontFamily: 'Lexend')),
-            subtitle: const Text("Turn on automated feeding schedules.",
-                style: TextStyle(fontFamily: 'Lexend')),
-            value: isFeedingEnabled,
-            activeColor: Colors.teal,
-            onChanged: isOffline
-                ? null
-                : (value) async {
-                    if (!value) await _deleteFeedingData();
-                    await _saveSettings({'feedingEnabled': value});
-                  },
+          StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+            stream: FirebaseFirestore.instance
+                .collection('settings')
+                .doc('triggered')
+                .snapshots(),
+            builder: (context, triggeredSnapshot) {
+              final triggeredData = triggeredSnapshot.data?.data();
+              final feedingLastTriggered =
+                  triggeredData?['feedingLastTriggered'];
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+if (feedingLastTriggered != null)
+  Padding(
+    padding: const EdgeInsets.only(left: 16, bottom: 4),
+    child: Text(
+      "Last Feeding: ${_formatDateTime(feedingLastTriggered.toDate().toLocal())}"
+      "${triggeredData?['feedingGrams'] != null ? " / ${triggeredData?['feedingGrams'].round()}g" : ""}",
+      style: const TextStyle(
+        fontFamily: 'Lexend',
+        fontSize: 13,
+        color: Colors.grey,
+      ),
+    ),
+  ),
+
+                  SwitchListTile(
+                    title: const Text(
+                      "Enable Feeding",
+                      style: TextStyle(fontFamily: 'Lexend'),
+                    ),
+                    subtitle: const Text(
+                      "Turn on automated feeding schedules.",
+                      style: TextStyle(fontFamily: 'Lexend'),
+                    ),
+                    value: isFeedingEnabled,
+                    activeColor: Colors.teal,
+                    onChanged: isOffline
+                        ? null
+                        : (value) async {
+                            if (!value) await _deleteFeedingData();
+                            await _saveSettings({'feedingEnabled': value});
+                          },
+                  ),
+                  if (isFeedingEnabled) ...[
+                    _buildFeedingTimeTile(
+                      "Schedule 1",
+                      feedingTime1,
+                      feedingGrams1,
+                      1,
+                    ),
+                    _buildFeedingTimeTile(
+                      "Schedule 2",
+                      feedingTime2,
+                      feedingGrams2,
+                      2,
+                    ),
+                  ],
+                ],
+              );
+            },
           ),
-          if (isFeedingEnabled)
-            ...[
-              _buildFeedingTimeTile(
-                  "Schedule 1", feedingTime1, feedingGrams1, 1),
-              _buildFeedingTimeTile(
-                  "Schedule 2", feedingTime2, feedingGrams2, 2),
-            ],
         ],
       );
     } else {
-      return Column(
-        key: const ValueKey('ph'),
-        children: [
-          SwitchListTile(
-            title: const Text("Enable pH Balancer",
-                style: TextStyle(fontFamily: 'Lexend')),
-            subtitle: const Text("Automatically maintain optimal pH levels.",
-                style: TextStyle(fontFamily: 'Lexend')),
-            value: isPhBalancerEnabled,
-            activeColor: Colors.teal,
-            onChanged: isOffline
-                ? null
-                : (value) => _saveSettings({'phBalancerEnabled': value}),
-          ),
-          if (isPhBalancerEnabled)
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
+      // pH Balancer Tab
+      return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+        stream: FirebaseFirestore.instance
+            .collection('settings')
+            .doc('triggered')
+            .snapshots(),
+        builder: (context, triggeredSnapshot) {
+          final triggeredData = triggeredSnapshot.data?.data();
+          final phLastTriggered = triggeredData?['phLastTriggered'];
+
+          return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+            stream: containerRef.snapshots(),
+            builder: (context, snapshot) {
+              final phSolutionLevel =
+                  snapshot.data?.data()?['phSolutionLevel'] ?? 0;
+              final isPhDisabled = phSolutionLevel <= 0;
+
+              if (isPhDisabled && isPhBalancerEnabled) {
+                WidgetsBinding.instance.addPostFrameCallback((_) async {
+                  await _saveSettings({'phBalancerEnabled': false});
+                });
+                isPhBalancerEnabled = false;
+              }
+
+              return Column(
+                key: const ValueKey('ph'),
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("Target pH Range: 6.8 - 7.2",
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'Lexend')),
-                  SizedBox(height: 4),
-                  Text(
-                    "The system will automatically dose to keep the pH within this range.",
-                    style:
-                        TextStyle(color: Colors.grey, fontFamily: 'Lexend'),
+                  if (phLastTriggered != null)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 16, bottom: 4),
+                      child: Text(
+                        "Last Triggered: ${_formatDateTime(phLastTriggered.toDate().toLocal())}",
+                        style: const TextStyle(
+                          fontFamily: 'Lexend',
+                          fontSize: 13,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ),
+                  if (isPhDisabled)
+                    const Padding(
+                      padding: EdgeInsets.only(left: 16, bottom: 4),
+                      child: Text(
+                        "Refill pH solution",
+                        style: TextStyle(
+                          fontFamily: 'Lexend',
+                          color: Colors.redAccent,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  SwitchListTile(
+                    title: const Text(
+                      "Enable pH Balancer",
+                      style: TextStyle(fontFamily: 'Lexend'),
+                    ),
+                    subtitle: Text(
+                      isPhDisabled
+                          ? "Cannot enable — pH solution is empty."
+                          : "Automatically maintain optimal pH levels.",
+                      style: const TextStyle(fontFamily: 'Lexend'),
+                    ),
+                    value: isPhBalancerEnabled,
+                    activeColor: Colors.teal,
+                    onChanged: (isOffline || isPhDisabled)
+                        ? null
+                        : (value) =>
+                              _saveSettings({'phBalancerEnabled': value}),
                   ),
+                  if (isPhBalancerEnabled && !isPhDisabled)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Target pH Range: 6.8 - 7.2",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Lexend',
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            "The system will automatically dose to keep the pH within this range.",
+                            style: TextStyle(
+                              color: Colors.grey,
+                              fontFamily: 'Lexend',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                 ],
-              ),
-            ),
-        ],
+              );
+            },
+          );
+        },
       );
     }
   }
+
+  String _formatDateTime(DateTime dateTime) {
+  final date = "${dateTime.year}-${dateTime.month.toString().padLeft(2, '0')}-${dateTime.day.toString().padLeft(2, '0')}";
+  final hour = dateTime.hour % 12 == 0 ? 12 : dateTime.hour % 12;
+  final minute = dateTime.minute.toString().padLeft(2, '0');
+  final period = dateTime.hour >= 12 ? 'PM' : 'AM';
+  return "$date $hour:$minute $period";
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -320,18 +573,18 @@ class _AutomationControlCardState extends State<AutomationControlCard>
         return Card(
           margin: const EdgeInsets.symmetric(vertical: 8),
           elevation: 4,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
                 Text(
                   "Automation Controls",
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleLarge
-                      ?.copyWith(fontFamily: 'Lexend'),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontFamily: 'Lexend'),
                 ),
                 if (isOffline)
                   const Padding(

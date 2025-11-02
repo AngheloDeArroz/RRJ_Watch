@@ -28,8 +28,7 @@ class ContainerLevelsCard extends StatelessWidget {
 
         final containerData = containerSnapshot.data!.data();
         final foodLevel = (containerData?['foodLevel'] ?? 0).toDouble();
-        final phSolutionLevel = (containerData?['phSolutionLevel'] ?? 0)
-            .toDouble();
+        final phSolutionLevel = (containerData?['phSolutionLevel'] ?? 0).toDouble();
 
         return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
           stream: FirebaseFirestore.instance
@@ -41,24 +40,20 @@ class ContainerLevelsCard extends StatelessWidget {
             double estimatedDaysRemainingFood = 0;
             double estimatedDaysRemainingPH = 0;
 
-            if (historySnapshot.hasData &&
-                historySnapshot.data!.docs.isNotEmpty) {
+            if (historySnapshot.hasData && historySnapshot.data!.docs.isNotEmpty) {
               final historyDocs = historySnapshot.data!.docs;
 
               // Food consumption per day
               final foodConsumptions = historyDocs
-                  .map(
-                    (doc) =>
-                        ((doc.data()['foodLevelStartOfDay'] ?? 0).toDouble() -
-                        (doc.data()['foodLevelEndOfDay'] ?? 0).toDouble()),
-                  )
+                  .map((doc) =>
+                      ((doc.data()['foodLevelStartOfDay'] ?? 0).toDouble() -
+                          (doc.data()['foodLevelEndOfDay'] ?? 0).toDouble()))
                   .where((c) => c > 0)
                   .toList();
 
               if (foodConsumptions.isNotEmpty) {
                 final avgFoodConsumption =
-                    foodConsumptions.reduce((a, b) => a + b) /
-                    foodConsumptions.length;
+                    foodConsumptions.reduce((a, b) => a + b) / foodConsumptions.length;
                 if (avgFoodConsumption > 0) {
                   estimatedDaysRemainingFood = foodLevel / avgFoodConsumption;
                 }
@@ -66,20 +61,15 @@ class ContainerLevelsCard extends StatelessWidget {
 
               // pH solution consumption per day
               final phConsumptions = historyDocs
-                  .map(
-                    (doc) =>
-                        ((doc.data()['phSolutionLevelStartOfDay'] ?? 0)
-                            .toDouble() -
-                        (doc.data()['phSolutionLevelEndOfDay'] ?? 0)
-                            .toDouble()),
-                  )
+                  .map((doc) =>
+                      ((doc.data()['phSolutionLevelStartOfDay'] ?? 0).toDouble() -
+                          (doc.data()['phSolutionLevelEndOfDay'] ?? 0).toDouble()))
                   .where((c) => c > 0)
                   .toList();
 
               if (phConsumptions.isNotEmpty) {
                 final avgPhConsumption =
-                    phConsumptions.reduce((a, b) => a + b) /
-                    phConsumptions.length;
+                    phConsumptions.reduce((a, b) => a + b) / phConsumptions.length;
                 if (avgPhConsumption > 0) {
                   estimatedDaysRemainingPH = phSolutionLevel / avgPhConsumption;
                 }
@@ -180,6 +170,8 @@ class _ContainerPagerState extends State<_ContainerPager> {
         description:
             'Pellets for feeding your aquatic pets. Keep it stocked to maintain feeding schedules.',
         estimatedDays: widget.estimatedDaysFood,
+        capacity: 400, // grams
+        unit: 'g',
       ),
       _ContainerCard(
         title: 'pH Solution',
@@ -192,6 +184,8 @@ class _ContainerPagerState extends State<_ContainerPager> {
         description:
             'Neutralizes and maintains the aquarium’s pH level for a stable aquatic environment.',
         estimatedDays: widget.estimatedDaysPH,
+        capacity: 2000, // milliliters
+        unit: 'mL',
       ),
     ];
 
@@ -243,6 +237,8 @@ class _ContainerCard extends StatelessWidget {
   final String label;
   final String description;
   final double estimatedDays;
+  final double capacity;
+  final String unit;
 
   const _ContainerCard({
     required this.title,
@@ -251,7 +247,17 @@ class _ContainerCard extends StatelessWidget {
     required this.label,
     required this.description,
     required this.estimatedDays,
+    required this.capacity,
+    required this.unit,
   });
+
+  String _formatApproxValue(double value, String unit) {
+    if (unit == 'mL' && value >= 1000) {
+      return '${(value / 1000).toStringAsFixed(1)} L';
+    } else {
+      return '${value.toStringAsFixed(0)} $unit';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -263,6 +269,9 @@ class _ContainerCard extends StatelessWidget {
     } else {
       color = Colors.red;
     }
+
+    final double approxValue = capacity * (level / 100);
+    final String formattedApprox = _formatApproxValue(approxValue, unit);
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -295,12 +304,24 @@ class _ContainerCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 6),
-                Chip(
-                  label: Text(
-                    '$level% Full',
-                    style: TextStyle(color: color, fontFamily: 'Lexend'),
-                  ),
-                  backgroundColor: color.withOpacity(0.2),
+                Column(
+                  children: [
+                    Chip(
+                      label: Text(
+                        '$level% Full',
+                        style: TextStyle(color: color, fontFamily: 'Lexend'),
+                      ),
+                      backgroundColor: color.withOpacity(0.2),
+                    ),
+                    Text(
+                      '≈ $formattedApprox',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.black54,
+                        fontFamily: 'Lexend',
+                      ),
+                    ),
+                  ],
                 ),
                 Padding(
                   padding: const EdgeInsets.only(top: 4),
@@ -312,17 +333,16 @@ class _ContainerCard extends StatelessWidget {
                       color: level == 0
                           ? Colors.red
                           : (estimatedDays <= 1
-                                ? Colors.red
-                                : (estimatedDays <= 3
-                                      ? Colors.orange
-                                      : Colors.green)),
+                              ? Colors.red
+                              : (estimatedDays <= 3
+                                  ? Colors.orange
+                                  : Colors.green)),
                       fontSize: 12,
                       fontFamily: 'Lexend',
                     ),
                     textAlign: TextAlign.center,
                   ),
                 ),
-
                 const SizedBox(height: 6),
                 Text(
                   description,
@@ -343,7 +363,7 @@ class _ContainerCard extends StatelessWidget {
   }
 }
 
-// Keep your wave and bottle animation widgets below unchanged
+// --- Animations unchanged ---
 class _FoodImageContainer extends StatefulWidget {
   final int level;
   const _FoodImageContainer({required this.level});
@@ -355,17 +375,15 @@ class _FoodImageContainer extends StatefulWidget {
 class _FoodImageContainerState extends State<_FoodImageContainer>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
-
   final double containerHeight = 160.0;
   final double containerWidth = 80.0;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    )..repeat();
+    _controller =
+        AnimationController(vsync: this, duration: const Duration(seconds: 2))
+          ..repeat();
   }
 
   @override
@@ -377,7 +395,6 @@ class _FoodImageContainerState extends State<_FoodImageContainer>
   @override
   Widget build(BuildContext context) {
     final int level = widget.level.clamp(0, 100);
-
     return SizedBox(
       width: containerWidth,
       height: containerHeight + 10,
@@ -406,7 +423,7 @@ class _FoodImageContainerState extends State<_FoodImageContainer>
           ),
           AnimatedBuilder(
             animation: _controller,
-            builder: (context, child) {
+            builder: (context, _) {
               return ClipRRect(
                 borderRadius: BorderRadius.circular(14),
                 child: CustomPaint(
@@ -447,7 +464,6 @@ class _FoodImageContainerState extends State<_FoodImageContainer>
 class _PHBottle extends StatefulWidget {
   final int level;
   final Color liquidColor;
-
   const _PHBottle({required this.level, required this.liquidColor});
 
   @override
@@ -457,17 +473,15 @@ class _PHBottle extends StatefulWidget {
 class _PHBottleState extends State<_PHBottle>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
-
   final double bottleHeight = 160.0;
   final double bottleWidth = 80.0;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    )..repeat();
+    _controller =
+        AnimationController(vsync: this, duration: const Duration(seconds: 2))
+          ..repeat();
   }
 
   @override
@@ -479,7 +493,6 @@ class _PHBottleState extends State<_PHBottle>
   @override
   Widget build(BuildContext context) {
     final bool isLow = widget.level < 20;
-
     return SizedBox(
       width: bottleWidth,
       height: bottleHeight + 10,
@@ -513,7 +526,7 @@ class _PHBottleState extends State<_PHBottle>
           ),
           AnimatedBuilder(
             animation: _controller,
-            builder: (context, child) {
+            builder: (context, _) {
               return ClipRRect(
                 borderRadius: BorderRadius.circular(14),
                 child: CustomPaint(
@@ -571,9 +584,7 @@ class WavePainter extends CustomPainter {
     );
 
     final paint = Paint()
-      ..shader = gradient.createShader(
-        Rect.fromLTWH(0, 0, size.width, size.height),
-      )
+      ..shader = gradient.createShader(Rect.fromLTWH(0, 0, size.width, size.height))
       ..style = PaintingStyle.fill;
 
     final path = Path();
